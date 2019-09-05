@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:s4hana="http://www.mulesoft.org/schema/mule/s4hana"
+    xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+    xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+    http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+    http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+    http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+    http://www.mulesoft.org/schema/mule/s4hana http://www.mulesoft.org/schema/mule/s4hana/current/mule-s4hana.xsd
+    http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+    http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+    <global-property doc:name="Global Property" doc:id="f6aacbbc-0491-4b0e-a1a1-a3a76d425a31" name="mule.env" value="dev" />
+    <configuration-properties doc:name="Configuration properties" doc:id="799240fa-36c9-4c4c-a615-49b16e8b3104" file="common.properties" />
+    <configuration-properties doc:name="Configuration properties" doc:id="180710c8-777e-4f5c-b8b8-16accb791da9" file="mule.${mule.env}.properties" />
+    <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="2bcbe926-c04a-4d91-862f-55440db09298">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" />
+    </http:listener-config>
+
+    <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="5546ba08-135f-4888-92c8-c9dbde121a06">
+        <salesforce:cached-basic-connection username="${sfdc.username}" password="${sfdc.password}" securityToken="${sfdc.securityToken}" />
+    </salesforce:sfdc-config>
+    <s4hana:config name="SAP_S_4HANA_Config" doc:name="SAP S 4HANA Config" doc:id="bcae1027-6101-44d7-8768-50adb2277863">
+        <s4hana:basic-authentication-connection baseUrl="${s4hana.baseUrl}" username="${s4hana.username}" password="${s4hana.password}" />
+    </s4hana:config>
+    <email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="a823e8cd-cc09-40e8-aaa6-94d510e04fed">
+        <email:smtps-connection host="${smtp.host}" password="${smtp.password}" port="${smtp.port}" user="${smtp.user}">
+            <tls:context>
+                <tls:trust-store insecure="true" />
+            </tls:context>
+        </email:smtps-connection>
+    </email:smtp-config>
+</mule>
