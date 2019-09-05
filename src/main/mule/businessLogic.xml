@@ -126,7 +126,7 @@ payload]]></ee:set-variable>
     </sub-flow>
     <sub-flow name="queryFromSalesforceSubFlow" doc:id="25dbd0dd-a71f-47b3-a98f-d9469c00bb61">
         <salesforce:query doc:name="Query Orders from Salesforce" doc:id="818f6fa1-b6a6-47ff-9375-5086ff5b360a" config-ref="Salesforce_Config">
-            <salesforce:salesforce-query>Select Id, OrderNumber, EffectiveDate, Status, SAP4HANA_Order_Key__c from Order WHERE LastModifiedDate &gt; :lastModifiedDate limit 4
+            <salesforce:salesforce-query>Select Id, OrderNumber, EffectiveDate, Status, SAP4HANA_Order_Key__c from Order WHERE LastModifiedDate &gt; :lastModifiedDate
             </salesforce:salesforce-query>
             <salesforce:parameters><![CDATA[#[output application/java
 ---
