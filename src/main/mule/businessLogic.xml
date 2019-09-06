@@ -8,7 +8,27 @@
     http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
     http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
     http://www.mulesoft.org/schema/mule/s4hana http://www.mulesoft.org/schema/mule/s4hana/current/mule-s4hana.xsd">
-    <flow name="businessLogicFlow" doc:id="9a38a51b-603a-4a5a-9928-b5d84fa080b6">
+    <flow name="mainFlow" doc:id="71a8e679-05d3-49cb-b21b-b1fcf38fb513">
+        <flow-ref doc:name="Call queryFromSalesforceSubFlow" doc:id="9f255b67-00e5-4652-a20b-65cfea0ecea8" name="queryFromSalesforceSubFlow" />
+        <flow-ref doc:name="Call businessLogicFlow" doc:id="563df043-f86e-4825-a3a2-1cd3d16f62d1" name="businessLogicFlow" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d26d970c-87c1-4b73-abea-37d912d0d281" type="ANY">
+                <flow-ref doc:name="errorHandlingFlow" doc:id="fe1aea8e-7d2c-4eda-8c64-fc1dd4dfa9b7" name="errorHandlingFlow" />
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+	<sub-flow name="queryFromSalesforceSubFlow" doc:id="25dbd0dd-a71f-47b3-a98f-d9469c00bb61">
+        <salesforce:query doc:name="Query Orders from Salesforce" doc:id="818f6fa1-b6a6-47ff-9375-5086ff5b360a" config-ref="Salesforce_Config">
+            <salesforce:salesforce-query>Select Id, OrderNumber, EffectiveDate, Status, SAP4HANA_Order_Key__c from Order WHERE LastModifiedDate &gt; :lastModifiedDate
+            </salesforce:salesforce-query>
+            <salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	"lastModifiedDate" : p('watermark.default.expression')
+}]]]></salesforce:parameters>
+        </salesforce:query>
+    </sub-flow>
+	<flow name="businessLogicFlow" doc:id="9a38a51b-603a-4a5a-9928-b5d84fa080b6">
         <batch:job jobName="migrateAccountsBatchJob" doc:id="4a2589d0-7121-4f6f-aea1-6d5cc15609fc" blockSize="${page.size}">
             <batch:process-records>
                 <batch:step name="getOrderItemsBatch" doc:id="d42a7f44-14e1-4a86-80f0-b787c74b6582">
@@ -22,11 +42,9 @@
                 </batch:step>
                 <batch:step name="createOrderBatch" doc:id="4c453cc3-821d-4fbb-8dff-5bb04a4d93b2" acceptExpression='#[isEmpty(vars.S4HanaOrder)]'>
                     <flow-ref doc:name="Call createOrderSubFlow" doc:id="7f8405a4-044d-4717-9154-5caac24fafa6" name="createOrderSubFlow" />
-
                 </batch:step>
                 <batch:step name="updateOrderBatch" doc:id="0431d165-c033-4a7c-ab1d-e9ee9e8da932" acceptExpression='#[not isEmpty(vars.S4HanaOrder)]'>
                     <flow-ref doc:name="Call updateOrderSubFlow" doc:id="2b2add88-ffb5-463e-9b27-f4d59c7ee635" name="updateOrderSubFlow" />
-
                 </batch:step>
             </batch:process-records>
             <batch:on-complete>
@@ -61,7 +79,7 @@
             </batch:on-complete>
         </batch:job>
     </flow>
-    <sub-flow name="getOrderItemsSubFlow" doc:id="2a6a11e2-e5cd-4177-886b-38c8c7683ce8">
+	<sub-flow name="getOrderItemsSubFlow" doc:id="2a6a11e2-e5cd-4177-886b-38c8c7683ce8">
         <set-variable value="#[payload]" doc:name="Set orderData variable" doc:id="d25fc6dc-f434-4cd1-b489-294266a15e3a" variableName="orderData" />
         <salesforce:query doc:name="Get order items" doc:id="a0c24175-34b6-45f8-9d08-c80a740d1c0e" config-ref="Salesforce_Config">
             <salesforce:salesforce-query>SELECT UnitPrice, Quantity, PricebookEntry.ProductCode, PricebookEntry.UnitPrice,
@@ -89,14 +107,12 @@ vars.orderData ++
       			"NetAmount": $.UnitPrice	
 	    		}
 }
-
- 
         ]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
         <logger level="INFO" doc:name="Log extended payload" doc:id="af48a71f-e56e-4197-987f-fbf62a3788fb" message="#[output apllication/json --- vars.orderData]" />
     </sub-flow>
-    <sub-flow name="checkOrderInS4HanaSubFlow" doc:id="43b93961-e457-4f05-a2e5-76ea6c29858c">
+	<sub-flow name="checkOrderInS4HanaSubFlow" doc:id="43b93961-e457-4f05-a2e5-76ea6c29858c">
         <ee:transform doc:name="Set S4Hana SalesOrder variable" doc:id="36f0b202-7e83-4b9b-a47a-ba1790215926">
             <ee:message>
             </ee:message>
@@ -124,18 +140,7 @@ payload]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
     </sub-flow>
-    <sub-flow name="queryFromSalesforceSubFlow" doc:id="25dbd0dd-a71f-47b3-a98f-d9469c00bb61">
-        <salesforce:query doc:name="Query Orders from Salesforce" doc:id="818f6fa1-b6a6-47ff-9375-5086ff5b360a" config-ref="Salesforce_Config">
-            <salesforce:salesforce-query>Select Id, OrderNumber, EffectiveDate, Status, SAP4HANA_Order_Key__c from Order WHERE LastModifiedDate &gt; :lastModifiedDate
-            </salesforce:salesforce-query>
-            <salesforce:parameters><![CDATA[#[output application/java
----
-{
-	"lastModifiedDate" : p('watermark.default.expression')
-}]]]></salesforce:parameters>
-        </salesforce:query>
-    </sub-flow>
-    <sub-flow name="createOrderSubFlow" doc:id="aff8b449-3c8c-468a-9d29-cdd074bc5ccd">
+	<sub-flow name="createOrderSubFlow" doc:id="aff8b449-3c8c-468a-9d29-cdd074bc5ccd">
         <ee:transform doc:name="Mapping for S4Hana" doc:id="ee3e7317-526f-4b25-a7ad-b5a0f04b9048">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
@@ -144,12 +149,11 @@ output application/java
 {
     "SalesOrder": vars.S4Hana.SalesOrder as String ,
     "SalesOrderType": "OR",
-    "SoldToParty": p("s4hana.SoldToParty"),
+    "SoldToParty": p("s4hana.soldToParty"),
     "RequestedDeliveryDate": vars.orderData.EffectiveDate as Date as String { format: "yyyy-MM-dd'T00:00:00'"} as DateTime,
 	//Inserting Material
     "to_Item": vars.orderData.to_Item
 }
-
 ]]></ee:set-payload>
             </ee:message>
             <ee:variables />
@@ -166,7 +170,7 @@ payload]]></ee:set-payload>
         </ee:transform>
         <logger level="INFO" doc:name="Log Response" doc:id="f0d1069f-9fff-439d-894d-33a228971dcb" message="Created order: #[output application/json --- payload]" />
     </sub-flow>
-    <sub-flow name="updateOrderSubFlow" doc:id="44f9434d-100a-4a52-8c83-5901b19debb7">
+	<sub-flow name="updateOrderSubFlow" doc:id="44f9434d-100a-4a52-8c83-5901b19debb7">
         <ee:transform doc:name="Mapping for S4Hana" doc:id="badee75b-ad01-432f-9373-301ac5bb0e80">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
@@ -178,7 +182,6 @@ output application/java
 	//Inserting Material
     "to_Item": vars.orderData.to_Item
 }
-
 ]]></ee:set-payload>
             </ee:message>
             <ee:variables />
@@ -199,13 +202,4 @@ payload]]></ee:set-payload>
         </ee:transform>
         <logger level="INFO" doc:name="Log Response" doc:id="b636cbdf-a6ba-432c-8908-aeb8f0649b32" message="Updated order: #[output application/json --- payload]" />
     </sub-flow>
-    <flow name="mainFlow" doc:id="71a8e679-05d3-49cb-b21b-b1fcf38fb513">
-        <flow-ref doc:name="Call queryFromSalesforceSubFlow" doc:id="9f255b67-00e5-4652-a20b-65cfea0ecea8" name="queryFromSalesforceSubFlow" />
-        <flow-ref doc:name="Call businessLogicFlow" doc:id="563df043-f86e-4825-a3a2-1cd3d16f62d1" name="businessLogicFlow" />
-        <error-handler>
-            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d26d970c-87c1-4b73-abea-37d912d0d281" type="ANY">
-                <flow-ref doc:name="errorHandlingFlow" doc:id="fe1aea8e-7d2c-4eda-8c64-fc1dd4dfa9b7" name="errorHandlingFlow" />
-            </on-error-propagate>
-        </error-handler>
-    </flow>
 </mule>

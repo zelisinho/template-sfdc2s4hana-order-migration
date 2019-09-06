@@ -70,7 +70,7 @@ Here's what you need to know about SAP S/4HANA to get this template to work.
 + page.size `1000`
 
 **SoldToParty Configuration: The sold-to party is contractually responsible for sales orders.**
-+ s4hana.SoldToParty `123456`
++ s4hana.soldToParty `123456`
 
 **Watermarking default last query timestamp e.g. 2017-12-13T03:00:59Z**
 + watermark.default.expression `2019-07-13T03:00:59Z`
@@ -105,6 +105,21 @@ Here's what you need to know about SAP S/4HANA to get this template to work.
 		
 There are no particular considerations for this template regarding API calls
 		</section>
+<section id="default_endpoints_xml">
+        <![CDATA[
+This is the file where you will found the inbound and outbound sides of your integration app.
+This Template has a [HTTP Listener Connector](https://docs.mulesoft.com/connectors/http/http-listener-ref) as the way to trigger the use case.
+​
+$H$H# Trigger Flow
+**HTTP Listener Connector** - Start Report Generation
+​
++ `${http.port}` is set as a property to be defined either on a property file or in CloudHub environment variables.
++ The path configured by default is `migrateorders` and you are free to change for the one you prefer.
++ The host name for all endpoints in your CloudHub configuration should be defined as `localhost`. CloudHub will then route requests from your application domain URL to the endpoint.
+​
+]]>
+        </section>
+        
 		<section id="default_business_logic_xml">
 		<![CDATA[
 Functional aspect of the template is implemented on this XML, directed by one flow responsible of executing the logic.

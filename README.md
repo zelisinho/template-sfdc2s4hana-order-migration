@@ -36,8 +36,6 @@ Before using this template, you may want to check out this [Documentation Page](
 with SAP S/4HANA and Anypoint Studio.
 <!-- Considerations (end) -->
 
-
-
 ## Salesforce Considerations
 
 Here's what you need to know about Salesforce to get this template to work:
@@ -50,14 +48,14 @@ Here's what you need to know about Salesforce to get this template to work:
 If the user who configured the template for the source system does not have at least *read only* permissions for the fields that are fetched, then an *InvalidFieldFault* API fault displays.
 
 ```
-java.lang.RuntimeException: [InvalidFieldFault [ApiQueryFault 
+java.lang.RuntimeException: [InvalidFieldFault [ApiQueryFault
 [ApiFault  exceptionCode='INVALID_FIELD'
-exceptionMessage='Account.Phone, Account.Rating, Account.RecordTypeId, 
+exceptionMessage='Account.Phone, Account.Rating, Account.RecordTypeId,
 Account.ShippingCity
 ^
 ERROR at Row:1:Column:486
-No such column 'RecordTypeId' on entity 'Account'. If you are attempting to 
-use a custom field, be sure to append the '__c' after the custom field name. 
+No such column 'RecordTypeId' on entity 'Account'. If you are attempting to
+use a custom field, be sure to append the '__c' after the custom field name.
 Reference your WSDL or the describe call for the appropriate names.'
 ]
 row='1'
@@ -67,15 +65,14 @@ column='486'
 ```
 
 
+## SAP S/4HANA Considerations
+
+Here's what you need to know to get this template to work with SAP S/4HANA.
 
 
+### As a Data Destination
 
-
-
-
-
-
-
+Here's what you need to know about SAP S/4HANA to get this template to work.
 # Run it!
 Simple steps to get this template running.
 <!-- Run it (start) -->
@@ -157,7 +154,7 @@ To use this template, configure properties such as credentials, configurations, 
 + page.size `1000`
 
 **SoldToParty Configuration: The sold-to party is contractually responsible for sales orders.**
-+ s4hana.SoldToParty `123456`
++ s4hana.soldToParty `123456`
 
 **Watermarking default last query timestamp e.g. 2017-12-13T03:00:59Z**
 + watermark.default.expression `2019-07-13T03:00:59Z`
@@ -224,7 +221,16 @@ This flow has Error Handling that basically consists on invoking the *On Error P
 
 ## endpoints.xml
 <!-- Default Endpoints XML (start) -->
-This file contains the endpoints for triggering the template and for retrieving the objects that meet the defined criteria in a query. You can execute a batch job process with the query results.<!-- Default Endpoints XML (end) -->
+This is the file where you will found the inbound and outbound sides of your integration app.
+This Template has a [HTTP Listener Connector](https://docs.mulesoft.com/connectors/http/http-listener-ref) as the way to trigger the use case.
+​
+### Trigger Flow
+**HTTP Listener Connector** - Start Report Generation
+​
++ `${http.port}` is set as a property to be defined either on a property file or in CloudHub environment variables.
++ The path configured by default is `migrateorders` and you are free to change for the one you prefer.
++ The host name for all endpoints in your CloudHub configuration should be defined as `localhost`. CloudHub will then route requests from your application domain URL to the endpoint.
+​<!-- Default Endpoints XML (end) -->
 
 <!-- Endpoints XML (start) -->
 
