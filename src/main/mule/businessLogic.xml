@@ -29,13 +29,13 @@
         </salesforce:query>
     </sub-flow>
 	<flow name="businessLogicFlow" doc:id="9a38a51b-603a-4a5a-9928-b5d84fa080b6">
-        <batch:job jobName="migrateAccountsBatchJob" doc:id="4a2589d0-7121-4f6f-aea1-6d5cc15609fc" blockSize="${page.size}">
+        <batch:job jobName="migrateOrdersBatchJob" doc:id="4a2589d0-7121-4f6f-aea1-6d5cc15609fc" blockSize="${page.size}">
             <batch:process-records>
                 <batch:step name="getOrderItemsBatch" doc:id="d42a7f44-14e1-4a86-80f0-b787c74b6582">
                     <flow-ref doc:name="Call getOrderItemsSubFlow" doc:id="c14de13c-18a1-492a-a23a-7bf972957f5b" name="getOrderItemsSubFlow" />
                 </batch:step>
                 <batch:step name="checkMaterialS4HanaBatch" doc:id="a359fa4a-1cb5-46d4-a74b-ccd0e44aeadc">
-                    <logger level="INFO" doc:name="Get Material from S4Hana is not Implemented" doc:id="df3300b4-e886-4a40-8428-6c18a45c793f" message="Get Material from S4Hana is not Implemented." />
+					<logger level="INFO" doc:name="Get Material from S4Hana is not Implemented" doc:id="df3300b4-e886-4a40-8428-6c18a45c793f" message="Get Material from S4Hana is not Implemented" />
                 </batch:step>
                 <batch:step name="checkOrderInS4HanaBatch" doc:id="a66e1cc8-311b-46f6-949f-2fb7d0cdf167">
                     <flow-ref doc:name="Call checkOrderInS4HanaSubFlow" doc:id="d67b3a24-2684-46a1-830e-3526bdaf5663" name="checkOrderInS4HanaSubFlow" />
@@ -158,7 +158,7 @@ output application/java
             </ee:message>
             <ee:variables />
         </ee:transform>
-        <s4hana:create-entity doc:name='Create Order in S4Hana' doc:id="ea8a5d7d-002f-4adf-adbf-861ba0e418a7" config-ref="SAP_S_4HANA_Config" service="API_SALES_ORDER_SRV"
+		<s4hana:create-entity doc:name='Create Order in S4Hana' doc:id="ea8a5d7d-002f-4adf-adbf-861ba0e418a7" config-ref="SAP_S_4HANA_Config" service="API_SALES_ORDER_SRV"
             entityType="A_SalesOrder" />
         <ee:transform doc:name="Save S4Hana Response" doc:id="9988a66f-a1d8-415e-bbe4-5f872eab726c">
             <ee:message>
@@ -186,7 +186,7 @@ output application/java
             </ee:message>
             <ee:variables />
         </ee:transform>
-        <s4hana:update-entity service="API_SALES_ORDER_SRV" entityType="A_SalesOrder" doc:name="Update Order in S4Hana" doc:id="ea897ac1-2936-4308-a1c6-486dbd207de2"
+		<s4hana:update-entity service="API_SALES_ORDER_SRV" entityType="A_SalesOrder" doc:name="Update Order in S4Hana" doc:id="ea897ac1-2936-4308-a1c6-486dbd207de2"
             config-ref="SAP_S_4HANA_Config">
             <s4hana:custom-headers>
                 <s4hana:custom-header key="If-Match" value="*" />

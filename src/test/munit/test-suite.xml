@@ -56,8 +56,8 @@ payload filter ($.SAP4HANA_Order_Key__c == vars.testInsertOrder.orderNumber)]]><
                 </ee:message>
             </ee:transform>
             <flow-ref doc:name="Call businessLogicFlow" doc:id="d8540205-afcc-4244-87ff-6ef2f073926d" name="businessLogicFlow" />
-            <scripting:execute engine="Groovy" doc:name="Sleep for 30s until the processing is completed" doc:id="bb54f4d1-10d0-43d4-b2a4-63c4d36a2579">
-                <scripting:code>sleep(30000)</scripting:code>
+            <scripting:execute engine="Groovy" doc:name="Sleep for 50s until the processing is completed" doc:id="bb54f4d1-10d0-43d4-b2a4-63c4d36a2579">
+                <scripting:code>sleep(50000)</scripting:code>
             </scripting:execute>
             <flow-ref doc:name='Call checkS4HanaTestOrderSubFlow' doc:id="6ce6940f-f3ab-404c-af23-ae60b75fc708" name="checkS4HanaTestOrderSubFlow" />
         </munit:execution>
