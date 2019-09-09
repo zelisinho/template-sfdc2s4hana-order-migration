@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+    xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:s4hana="http://www.mulesoft.org/schema/mule/s4hana" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+    xsi:schemaLocation="
+	http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+	http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+	http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+    http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+    http://www.mulesoft.org/schema/mule/s4hana http://www.mulesoft.org/schema/mule/s4hana/current/mule-s4hana.xsd
+    http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+    http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <munit:config name="test-suite.xml" />
+    <configuration-properties doc:name="Configuration properties" doc:id="cd3c5714-cd77-4aaf-9d27-6c76f64980e3" file="mule.test.properties" />
+    <munit:before-test name="test-suiteBefore_Test" description="Before tests actions" doc:id="dad9679c-8bbe-4e64-96fa-98d8bdfd7d7d">
+
+        <ee:transform doc:name="Prepare common testing data" doc:id="6e0bb64b-a5ab-4a1b-abf3-c86deeddeee8">
+            <ee:message>
+            </ee:message>
+            <ee:variables>
+                <ee:set-variable variableName="testInsertOrder"><![CDATA[%dw 2.0
+output application/java
+var index = randomInt(1000)
+---
+{
+    "accountName": "sfdc2s4hana account - " ++ index,
+    "productCode": "000000000000000001",
+    "orderNumber": "0005"++ index ++ "001",
+    "productName": "sfdc2s4hana test product - " ++ index,
+    "orderId": "0005"++ index ++ "001",
+    "quantity": "1.0",
+    "status": "Completed",
+	"EffectiveDate": now()
+}]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Create test order" doc:id="c98174b7-629c-40d2-bb67-61d2b6cced17" name="createTestOrderSubFlow" />
+        <logger level="INFO" doc:name="Log test data" doc:id="a3486a57-81de-4fda-bf18-b48d21772948" message="Test Data: #[output application/json --- vars.testInsertOrder]" />
+        <munit-tools:mock-when doc:name="Mock email processor to avoid sending email" doc:id="ca63aa76-8c0e-4994-9216-ae97e6d38162" processor="email:send">
+            <munit-tools:then-return />
+        </munit-tools:mock-when>
+    </munit:before-test>
+    <munit:test name="ordersMigrationTest" description="Test migrating orders from different customers" doc:id="385ee2ed-ed30-4eb5-9a72-585835d8b09f">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="businessLogicFlow" />
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <flow-ref doc:name="Call queryFromSalesforceSubFlow" doc:id="c784160e-02b7-47d1-a60d-85cd02691f8a" name="queryFromSalesforceSubFlow" />
+            <ee:transform doc:name="Filter payload" doc:id="a121c8f1-274d-4398-8ccc-38f6bd63b627">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload filter ($.SAP4HANA_Order_Key__c == vars.testInsertOrder.orderNumber)]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <flow-ref doc:name="Call businessLogicFlow" doc:id="d8540205-afcc-4244-87ff-6ef2f073926d" name="businessLogicFlow" />
+            <scripting:execute engine="Groovy" doc:name="Sleep for 30s until the processing is completed" doc:id="bb54f4d1-10d0-43d4-b2a4-63c4d36a2579">
+                <scripting:code>sleep(30000)</scripting:code>
+            </scripting:execute>
+            <flow-ref doc:name='Call checkS4HanaTestOrderSubFlow' doc:id="6ce6940f-f3ab-404c-af23-ae60b75fc708" name="checkS4HanaTestOrderSubFlow" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that doc:name="Assert that Order was migrated - compare order number" doc:id="7231a071-dbaa-442f-b707-bacb88b54b50"
+                expression="#[vars.testInsertOrder.orderNumber as Number]" is="#[MunitTools::equalTo(vars.migratedTestOrder.SalesOrder as Number)]" message="Order number is not equal with SalesOrder" />
+            <munit-tools:assert-that doc:name="Assert that Order was migrated - compare effective date" doc:id="4730e9ce-9c02-49ce-b78a-cd8c871252d1"
+                expression="#[vars.testInsertOrder.EffectiveDate as Date]" is="#[MunitTools::equalTo(vars.migratedTestOrder.RequestedDeliveryDate as Date)]" message="Effective date is not equal with RequestedDeliveryDate" />
+			<munit-tools:verify-call doc:name="Verify salesforce query call" doc:id="0ac86708-85f7-48cf-9f51-bd5725fdd46d" processor="salesforce:query"
+                atLeast="1" />
+            <munit-tools:verify-call doc:name="Verify s4hana query call" doc:id="6d994ed8-871f-404c-8e7e-ae3f8e38f8ce" processor="s4hana:query" atLeast="1" />
+			<munit-tools:verify-call doc:name="Verify s4hana create-entity  call" doc:id="30cd9f3d-95f8-4cd5-a5f5-aa47f9a354b2" processor="s4hana:create-entity"
+                atLeast="1" />
+        </munit:validation>
+    </munit:test>
+    <sub-flow name="checkS4HanaTestOrderSubFlow" doc:id="4539ade9-e5ee-4299-a2c5-b4ce238257c3">
+		<ee:transform doc:name="Set test SalesOrder" doc:id="b2d6fabf-f705-4a26-8015-b71a6bf9a89f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    "SalesOrder": vars.testInsertOrder.orderNumber
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<s4hana:get-entity doc:name="Get test Order data" doc:id="ad5e486c-379e-4ffa-8d93-c9efd6cdfe7c" config-ref="SAP_S_4HANA_Config" service="API_SALES_ORDER_SRV" entityType="A_SalesOrder" target="migratedTestOrder"/>
+	</sub-flow>
+	<sub-flow name="createTestOrderSubFlow" doc:id="79aee6fa-68cb-469b-98a5-8372586bdcbb">
+        <salesforce:create doc:name="Create Account" doc:id="85417166-64bd-42ca-91d0-e47b53ba53cb" config-ref="Salesforce_Config" type="Account" target="accountId" targetValue="#[payload[0].Id]">
+            <salesforce:records><![CDATA[#[[{
+    "name": vars.testInsertOrder.accountName
+}]]]]></salesforce:records>
+        </salesforce:create>
+		<salesforce:create type="Contract" doc:name="Create Contract" doc:id="f40e0c31-a603-4098-b6f9-cde349710e1f" config-ref="Salesforce_Config" target="contractId" targetValue="#[payload[0].Id]">
+            <salesforce:records><![CDATA[#[[{
+	"ContractTerm": 1000,
+	"AccountId": vars.accountId,
+	"Pricebook2Id": p('sfdc.pricebook.id')
+}]]]]></salesforce:records>
+        </salesforce:create>
+		<salesforce:create doc:name="Create Product" doc:id="84112968-6f20-4ff3-b3c6-f60ccc724352" config-ref="Salesforce_Config" type="Product2" target="productId" targetValue="#[payload[0].Id]">
+            <salesforce:records><![CDATA[#[[
+	{
+		"Name": vars.testInsertOrder.productName,
+		"ProductCode": vars.testInsertOrder.productCode
+	}
+]]]]></salesforce:records>
+        </salesforce:create>
+        <salesforce:create doc:name="Create Pricebookentry" doc:id="08c3175f-3fce-482d-906b-ed9fe84b9f80" config-ref="Salesforce_Config" type="Pricebookentry" targetValue="#[payload[1].Id]" target="pricebookentryId">
+            <salesforce:records><![CDATA[#[[
+	{
+		"Product2Id": vars.productId,
+		"Pricebook2Id" : p('sfdc.pricebook.standard.id'),
+		"UnitPrice" : "1"
+	},
+	{
+		"Product2Id": vars.productId,
+		"Pricebook2Id" : p('sfdc.pricebook.id'),
+		"UnitPrice" : "1",
+		"UseStandardPrice" : false
+	}
+]]]]></salesforce:records>
+        </salesforce:create>
+		<salesforce:create doc:name="Create Order" doc:id="e82865ec-1fd4-45ee-8a66-fb7b3162c5e5" config-ref="Salesforce_Config" type="Order" target="sfdcOrderId" targetValue="#[payload[0].Id]">
+            <salesforce:records><![CDATA[#[[  
+	{
+		"Status": "Completed",
+		"SAP4HANA_Order_Key__c": vars.testInsertOrder.orderNumber,
+		"AccountId": vars.accountId,
+		"ContractId": vars.contractId,
+		"EffectiveDate": vars.testInsertOrder.EffectiveDate,
+		"Pricebook2Id" : p('sfdc.pricebook.id')
+	}
+]]]]></salesforce:records>
+        </salesforce:create>
+		<salesforce:create type="OrderItem" doc:name="Create OrderItem" doc:id="d7fc6f8d-2dba-42dc-80ca-f21e0509c02e" config-ref="Salesforce_Config" target="sfdcOrderItemId" targetValue="#[payload[0].Id]">
+            <salesforce:records><![CDATA[#[[{
+	"Quantity": 1,
+	"Product2Id": vars.productId,
+	"OrderId": vars.sfdcOrderId,
+	"UnitPrice": "1",
+	"ServiceDate": now(),
+	"PricebookEntryId": vars.pricebookentryId,
+}]]]]></salesforce:records>
+        </salesforce:create>
+    </sub-flow>
+     <munit:after-test name="test-suiteAfter_Test" description="After tests actions" doc:id="68810fae-e8de-48c2-827f-dd6259b60035">
+        <salesforce:delete doc:name="Delete Test Order" doc:id="05581641-85a9-4ede-a128-9ec768e5a7b1" config-ref="Salesforce_Config">
+            <salesforce:delete-ids><![CDATA[#[[vars.contractId, vars.productId, vars.pricebookentryId, vars.sfdcOrderId, vars.sfdcOrderItemId]]]]></salesforce:delete-ids>
+        </salesforce:delete>
+		<ee:transform doc:name="Mapping for delete S4Hana test order" doc:id="33648b66-6bbe-4513-bc2d-4f99b8be1c52" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    "SalesOrder": vars.testInsertOrder.orderNumber
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<s4hana:delete-entity doc:name="Delete test Order from S4Hana" doc:id="775a571b-d953-412c-bd64-aaa309098aed" config-ref="SAP_S_4HANA_Config" service="API_SALES_ORDER_SRV" entityType="A_SalesOrder">
+			<s4hana:custom-headers >
+				<s4hana:custom-header key="If-Match" value="*" />
+			</s4hana:custom-headers>
+		</s4hana:delete-entity>
+    </munit:after-test>
+</mule>

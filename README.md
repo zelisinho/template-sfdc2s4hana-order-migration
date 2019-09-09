@@ -10,17 +10,9 @@ This template is subject to the conditions of the <a href="https://s3.amazonaws.
 # Use Case
 <!-- Use Case (start) -->
 This Anypoint template serves as a foundation for setting an online sync of orders from Salesforce to SAP S/4HANA.
-
-Use this template if would like to sync orders from Salesforce to SAP S/4HANA sales orders in manner of one time synchronization by browse toting the HTTP endpoint. The template will fetch all orders by specified criteria and send it as to SAP S/4HANA to create/update sales order there.
-Requirements have been set not only to be used as examples, but also to establish a starting point to adapt your integration to your requirements.
-
-As implemented, this template leverages the Mule batch module.
-The batch job is divided into *Process* and *On Complete* stages.
-The integration is triggered by the HTTP endpoint to fetch all the Salesforce Orders suitable for migration.
-Fetched orders are passed to the batch as input. In the batch the sales order is fetched from SAP S/4HANA by its order number.
-If it exists, its sales order identifier is resolved against SAP S/4HANA. If it doesn't exist, then new sales order is fetched from SAP S/4HANA.
-Afterwards every such order from Salesforce is sent to SAP S/4HANA where it is asynchronously updated or created.
-Finally during the *On Complete* stage the template logs output statistics data into the console and send a notification e-mail with the results of the batch execution.
+Use this template if would like to sync orders from Salesforce to SAP S/4HANA sales orders in manner of one time synchronization by browse toting the HTTP endpoint. The template will fetch all orders by specified criteria and send it to SAP S/4HANA to create/update sales order. Requirements have been set not only to be used as examples, but also to establish a starting point to adapt your integration to your requirements.
+As implemented, this template leverages the Mule batch module. The batch job is divided into Process and On Complete stages. 
+The integration is triggered by the HTTP endpoint to fetch all the Salesforce Orders suitable for migration. Fetched orders are passed to the batch as input. In the batch the sales order is fetched from SAP S/4HANA by its order number. If it exists, its sales order identifier is resolved against SAP S/4HANA. If it doesn't exist, then new sales order is fetched from SAP S/4HANA. Afterwards every sales order from Salesforce is sent to SAP S/4HANA where it is asynchronously updated or created. Finally during the On Complete stage the template logs output statistics data into the console and sends a notification e-mail with the results of the batch execution.
 <!-- Use Case (end) -->
 
 # Considerations
@@ -29,7 +21,7 @@ Finally during the *On Complete* stage the template logs output statistics data 
 <!-- Default Considerations (end) -->
 
 <!-- Considerations (start) -->
-​To make this template run, there are certain preconditions that must be considered. All of them deal with the preparations in both, that must be made for the template to run smoothly.
+​To make this template run, there are certain preconditions that must be considered. All of them deal with the preparations in both source (Salesforce) and destination (SAP S4Hana) systems, that must be made for the template to run smoothly.
 **Failing to do so could lead to unexpected behavior of the template.**
 
 Before using this template, you may want to check out this [Documentation Page](https://docs.mulesoft.com/connectors/sap/sap-s4hana-cloud-connector), that will teach you how to work
