@@ -36,8 +36,9 @@ var index = randomInt(1000)
             </ee:variables>
         </ee:transform>
         <flow-ref doc:name="Create test order" doc:id="c98174b7-629c-40d2-bb67-61d2b6cced17" name="createTestOrderSubFlow" />
-        <logger level="INFO" doc:name="Log test data" doc:id="a3486a57-81de-4fda-bf18-b48d21772948" message="Test Data: #[output application/json --- vars.testInsertOrder]" />
-        <munit-tools:mock-when doc:name="Mock email processor to avoid sending email" doc:id="ca63aa76-8c0e-4994-9216-ae97e6d38162" processor="email:send">
+		<logger level="INFO" doc:name="Log test data" doc:id="a3486a57-81de-4fda-bf18-b48d21772948" message="Test Data: #[output application/json --- vars.testInsertOrder]" />
+        <logger level="INFO" doc:name="Logger" doc:id="9a55b524-c3df-4d3d-8a4e-c9e4c59a80e3" message="#[output application/json --- vars]"/>
+		<munit-tools:mock-when doc:name="Mock email processor to avoid sending email" doc:id="ca63aa76-8c0e-4994-9216-ae97e6d38162" processor="email:send">
             <munit-tools:then-return />
         </munit-tools:mock-when>
     </munit:before-test>
@@ -47,7 +48,7 @@ var index = randomInt(1000)
         </munit:enable-flow-sources>
         <munit:execution>
             <flow-ref doc:name="Call queryFromSalesforceSubFlow" doc:id="c784160e-02b7-47d1-a60d-85cd02691f8a" name="queryFromSalesforceSubFlow" />
-            <ee:transform doc:name="Filter payload" doc:id="a121c8f1-274d-4398-8ccc-38f6bd63b627">
+			<ee:transform doc:name="Filter payload" doc:id="a121c8f1-274d-4398-8ccc-38f6bd63b627">
                 <ee:message>
                     <ee:set-payload><![CDATA[%dw 2.0
 output application/java
@@ -55,9 +56,9 @@ output application/java
 payload filter ($.SAP4HANA_Order_Key__c == vars.testInsertOrder.orderNumber)]]></ee:set-payload>
                 </ee:message>
             </ee:transform>
-            <flow-ref doc:name="Call businessLogicFlow" doc:id="d8540205-afcc-4244-87ff-6ef2f073926d" name="businessLogicFlow" />
-            <scripting:execute engine="Groovy" doc:name="Sleep for 50s until the processing is completed" doc:id="bb54f4d1-10d0-43d4-b2a4-63c4d36a2579">
-                <scripting:code>sleep(50000)</scripting:code>
+			<flow-ref doc:name="Call businessLogicFlow" doc:id="d8540205-afcc-4244-87ff-6ef2f073926d" name="businessLogicFlow" />
+            <scripting:execute engine="Groovy" doc:name="Sleep for 30s until the processing is completed" doc:id="bb54f4d1-10d0-43d4-b2a4-63c4d36a2579">
+                <scripting:code>sleep(30000)</scripting:code>
             </scripting:execute>
             <flow-ref doc:name='Call checkS4HanaTestOrderSubFlow' doc:id="6ce6940f-f3ab-404c-af23-ae60b75fc708" name="checkS4HanaTestOrderSubFlow" />
         </munit:execution>
@@ -87,7 +88,7 @@ output application/java
 		<s4hana:get-entity doc:name="Get test Order data" doc:id="ad5e486c-379e-4ffa-8d93-c9efd6cdfe7c" config-ref="SAP_S_4HANA_Config" service="API_SALES_ORDER_SRV" entityType="A_SalesOrder" target="migratedTestOrder"/>
 	</sub-flow>
 	<sub-flow name="createTestOrderSubFlow" doc:id="79aee6fa-68cb-469b-98a5-8372586bdcbb">
-        <salesforce:create doc:name="Create Account" doc:id="85417166-64bd-42ca-91d0-e47b53ba53cb" config-ref="Salesforce_Config" type="Account" target="accountId" targetValue="#[payload[0].Id]">
+        <salesforce:create doc:name="Create Account" doc:id="85417166-64bd-42ca-91d0-e47b53ba53cb" config-ref="Salesforce_Config" type="Account" targetValue="#[payload[0].Id]" target="accountId">
             <salesforce:records><![CDATA[#[[{
     "name": vars.testInsertOrder.accountName
 }]]]]></salesforce:records>
@@ -147,7 +148,7 @@ output application/java
     </sub-flow>
      <munit:after-test name="test-suiteAfter_Test" description="After tests actions" doc:id="68810fae-e8de-48c2-827f-dd6259b60035">
         <salesforce:delete doc:name="Delete Test Order" doc:id="05581641-85a9-4ede-a128-9ec768e5a7b1" config-ref="Salesforce_Config">
-            <salesforce:delete-ids><![CDATA[#[[vars.contractId, vars.productId, vars.pricebookentryId, vars.sfdcOrderId, vars.sfdcOrderItemId]]]]></salesforce:delete-ids>
+            <salesforce:delete-ids><![CDATA[#[[vars.accountId,vars.contractId, vars.productId, vars.pricebookentryId, vars.sfdcOrderId, vars.sfdcOrderItemId]]]]></salesforce:delete-ids>
         </salesforce:delete>
 		<ee:transform doc:name="Mapping for delete S4Hana test order" doc:id="33648b66-6bbe-4513-bc2d-4f99b8be1c52" >
 			<ee:message >
