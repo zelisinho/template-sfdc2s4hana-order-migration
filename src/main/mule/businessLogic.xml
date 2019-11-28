@@ -152,7 +152,7 @@ output application/java
     "SoldToParty": p("s4hana.soldToParty"),
     "RequestedDeliveryDate": vars.orderData.EffectiveDate as Date as String { format: "yyyy-MM-dd'T00:00:00'"} as DateTime,
 	//Inserting Material
-    "to_Item": vars.orderData.to_Item
+    //"to_Item": vars.orderData.to_Item
 }
 ]]></ee:set-payload>
             </ee:message>
